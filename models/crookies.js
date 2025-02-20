@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const cookieSchema = new mongoose.Schema({
+const crookieSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "El nombre de la cookie es requerido"],
@@ -18,7 +18,7 @@ const cookieSchema = new mongoose.Schema({
         required: [true, "La recomendación de la cookie es requerida"],
     },
     price: {
-        type: Number, 
+        type: Number, // Cambio de String a Number
         required: [true, "El precio de la cookie es requerido"],
     },
     deletedAt: {
@@ -27,5 +27,5 @@ const cookieSchema = new mongoose.Schema({
     },
 });
 
-const Cookie = mongoose.model("Cookie", cookieSchema);
-export default Cookie;
+const Crookies = mongoose.model("Crookie", crookieSchema);
+export default Crookies;

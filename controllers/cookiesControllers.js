@@ -1,5 +1,6 @@
 import Cookies from '../models/cookies.js';
 import { getAllCookies, createNewCookie, updateCookies, deleteCookie } from '../services/cookieService.js';
+import upload from '../config/multer.js';
 
 export async function getCookies(req, res) {
     try {
@@ -12,14 +13,16 @@ export async function getCookies(req, res) {
 
 export async function createCookie(req, res) {
     try {
-        const { name, photo, description, recommendation, price } = req.body;
+        const { name, description, recommendation, price    } = req.body;
+        // Extraer la imagen desde req.file
+        const photo = req.file ? `/uploads/${req.file.filename}` : null;
 
-        // Validación de campos antes de hacer la búsqueda
+        // Validación de campos
         if (!name || !photo || !description || !recommendation || !price) {
             return res.status(400).json({ message: "Todos los campos son obligatorios" });
         }
 
-        const newCookie = await createNewCookie({ name, photo, description, recommendation, price });
+        const newCookie = await createNewCookie({ name, photo, description, recommendation, price});
         return res.status(201).json(newCookie);
 
     } catch (error) {
@@ -27,6 +30,7 @@ export async function createCookie(req, res) {
         res.status(500).json({ message: error.message });
     }
 }
+
 export async function editCookie(req, res) {
   try {
       const { id } = req.params;

@@ -1,12 +1,15 @@
 import express from "express";
 import dotenv from "dotenv";
-import connectDatabase from "./Database/mongoConnect.js";
+import connectDatabase from "./config/mongoConnect.js";
 import apiRouter from "./router/apiRouter.js";
+import cors from "cors";
+
 
 const app = express();
 app.use(express.json());
-
+app.use(cors());
 dotenv.config();
+app.use(express.static("public"));
 const port = process.env.PORT || 3020;
 
 connectDatabase();
