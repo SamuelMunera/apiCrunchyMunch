@@ -53,7 +53,7 @@ export async function updateCrookies(crookieToUpdate, updateData) {
 export async function deleteCrookie(crookieId) {
     try {
         // Buscar la crookie por su ID
-        const crookie = await Cookies.findById(crookieId);
+        const crookie = await Crookies.findById(crookieId);
 
         if (!crookie) {
             // Si no existe la crookie, lanzar error
