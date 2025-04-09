@@ -6,6 +6,10 @@ import productRouter from './productRouter.js';
 import categoryRouter from './categoryRouter.js';
 import userRouter from './userRouter.js';
 import authRoutes from './authRouter.js';
+import superUserRouter from './superUserRouter.js';
+import superUserAuthRouter from './superUserAuthRouter.js';
+import toppingRouter from './toppingRouter.js'; 
+import iceCreamRouter from './iceCreamRouter.js';
 
 const router = express.Router();      
 router.use('/cookie', cookieRouter);
@@ -15,5 +19,9 @@ router.use('/product', productRouter);
 router.use('/category', categoryRouter);
 router.use('/user', userRouter);
 router.use("/auth", authRoutes);
+router.use('/superUser', superUserRouter); 
+router.use('/superUserAuth', superUserAuthRouter);
+router.use('/topping', toppingRouter);
+router.use('/iceCream', iceCreamRouter); 
 
-export default router; 
+export default router;   

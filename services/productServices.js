@@ -2,27 +2,57 @@ import Product from "../models/product.js";
 
 export async function getAllProduct() {
     try {
-        return await Product.find();
+        // Agregamos populate para toppings e iceCream
+        const products = await Product.find({ deletedAt: null })
+            .populate('toppings')
+            .populate('iceCream');
+        return products;
     } catch (error) {
-        throw new Error("Error al obtener los productos: " + error.message);
+        throw new Error(`Error al obtener productos: ${error.message}`);
     }
 }
 
 export async function createNewProduct(data) {
     try {
-        const { name, photo, description, recommendation, price, category } = data;
-
+        const { 
+            name, 
+            photo, 
+            description, 
+            recommendation, 
+            price, 
+            category,
+            toppings = [], // Valor por defecto: array vacío
+            iceCream = []  // Valor por defecto: array vacío
+        } = data;
+        
         const verifyProduct = await Product.findOne({ name });
         if (verifyProduct) {
             throw new Error("El producto ya existe");
         }
-
-        const newProduct = new Product({ name, photo, description, recommendation, price, category });
+        
+        const newProduct = new Product({ 
+            name, 
+            photo, 
+            description, 
+            recommendation, 
+            price, 
+            category,
+            toppings,    // Incluir toppings
+            iceCream     // Incluir iceCream
+        });
+        
         await newProduct.save();
-
-        return newProduct;
+        
+        // Opcionalmente popular los campos para devolverlos completos
+        const populatedProduct = await Product.findById(newProduct._id)
+            .populate('toppings')
+            .populate('iceCream')
+            .populate('category');
+        
+        return populatedProduct || newProduct;
     } catch (error) {
-        console.error(error); 
+        console.error(error);
+        
         throw new Error(`Error al crear el producto: ${error.message}`);
     }
 }
@@ -74,10 +104,18 @@ export async function deleteProduct(productId) {
     }
 }
 
-export async function getByIdProduct(productId) {
+export async function getByIdProduct(id) {
     try {
-        return await Product.findById(productId);
+        const product = await Product.findById(id)
+            .populate('toppings')
+            .populate('iceCream');
+        
+        if (!product) {
+            throw new Error('Producto no encontrado');
+        }
+        
+        return product;
     } catch (error) {
-        throw new Error("Error al obtener el producto: " + error.message);
+        throw new Error(`Error al obtener el producto: ${error.message}`);
     }
 }
