@@ -46,3 +46,11 @@ export const getIceCreamById = async (req, res) => {
         res.status(500).json({ message: "Error al obtener el helado", error });
     }
 };
+export const getAllIceCreams = async (req, res) => {
+    try {
+        const helados = await IceCream.find();
+        res.status(200).json(helados);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los helados", error });
+    }
+};

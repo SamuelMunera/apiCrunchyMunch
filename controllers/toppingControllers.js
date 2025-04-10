@@ -11,6 +11,16 @@ export const createTopping = async (req, res) => {
     }
 };
 
+export const getAllToppings = async (req, res) => {
+    try {
+        const toppings = await Topping.find();
+        res.status(200).json(toppings);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener los toppings", error });
+    }
+};
+
+
 // Eliminar un topping
 export const deleteTopping = async (req, res) => {
     try {
