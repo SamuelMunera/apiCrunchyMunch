@@ -30,12 +30,13 @@ export async function login(email, password) {
         // Crear el token JWT
         const token = jwt.sign(
             { 
-                id: user._id,
+                _id: user._id,
                 email: user.email,
                 name: user.name
             },
             JWT_SECRET,
-            { expiresIn: '24h' } // El token expira en 24 horas
+            { expiresIn: process.env.JWT_EXPIRATION || '2h' }
+
         );
         
         // Retornar el token y los datos del usuario (sin la contraseña)
@@ -58,29 +59,28 @@ export async function login(email, password) {
     }
 }
 
-// Middleware para verificar el token JWT
-export function verifyToken(req, res, next) {
-    try {
-        // Obtener el token del header
-        const authHeader = req.headers.authorization;
-        
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: "Acceso denegado. Token no proporcionado" });
-        }
-        
-        // Extraer el token
-        const token = authHeader.split(' ')[1];
-        
-        // Verificar el token
-        const decoded = jwt.verify(token, JWT_SECRET);
-        
-        // Añadir el usuario al request
-        req.user = decoded;
-        
-        // Continuar
-        next();
-    } catch (error) {
-        console.error(error);
-        return res.status(401).json({ message: "Token inválido o expirado" });
+
+
+// Servicio para validar token y obtener información del usuario
+export const validateTokenService = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('Usuario no encontrado');
     }
-}
+    
+    // Devolver información del usuario sin datos sensibles
+    return {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      // Otros campos relevantes
+    };
+  } catch (error) {
+    throw new Error(`Error al validar token: ${error.message}`);
+  }
+};
+
+// Aquí irían otros servicios relacionados con autenticación...
