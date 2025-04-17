@@ -14,11 +14,12 @@ const router = express.Router();
 // Rutas protegidas con autenticación
 router.post('/create', verifyToken, createPedido);
 router.get('/mis-pedidos', verifyToken, getUserPedidos);
-router.get('/:id', verifyToken, getPedidoById);
+
+// Rutas protegidas para administradores (colócalas ANTES de la ruta con :id)
+router.get('/all-orders', getAllPedidos);
+router.patch('/:id/estado', verifyToken, updatePedidoStatus);
+
+// Esta ruta debe estar después porque tiene un parámetro dinámico
+router.get('/:id', verifyToken, getPedidoById); 
 router.patch('/:id/pago', verifyToken, actualizarComprobantePago);
-
-// Rutas protegidas para administradores
-router.get('/', verifyToken, checkRole(['admin']), getAllPedidos);
-router.patch('/:id/estado', verifyToken, checkRole(['admin']), updatePedidoStatus);
-
 export default router;

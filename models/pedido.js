@@ -75,12 +75,14 @@ const pedidoSchema = new mongoose.Schema({
         type: String,
         required: false
       },
-      topping: {
-        type: String,
+      selectedTopping: {
+        type: mongoose.Schema.Types.ObjectId, // Cambiado a ObjectId
+        ref: 'topping', // Referencia a la colección de toppings
         required: false
       },
-      sabor_helado: {
-        type: String,
+      selectedIceCream: {
+        type: mongoose.Schema.Types.ObjectId, // Cambiado a ObjectId
+        ref: 'iceCream', // Referencia a la colección de helados
         required: false
       }
     }],

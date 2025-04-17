@@ -10,8 +10,8 @@ export const crearPedidoService = async (pedidoData) => {
   }
 };
 
-// Servicio para obtener todos los pedidos con filtros
-export const obtenerPedidosService = async (filtros, opciones) => {
+// Servicio para obtener todos los pedidos con filtros y paginación
+export const obtenerPedidosService = async (filtros = {}, opciones = {}) => {
   try {
     const { estado, fechaInicio, fechaFin } = filtros;
     const { pagina = 1, limite = 10 } = opciones;
@@ -22,32 +22,37 @@ export const obtenerPedidosService = async (filtros, opciones) => {
       query.estado = estado;
     }
     
-    if (fechaInicio && fechaFin) {
-      query.createdAt = {
-        $gte: new Date(fechaInicio),
-        $lte: new Date(fechaFin)
-      };
+    if (fechaInicio || fechaFin) {
+      query.fechaCreacion = {};
+      if (fechaInicio) {
+        query.fechaCreacion.$gte = new Date(fechaInicio);
+      }
+      if (fechaFin) {
+        query.fechaCreacion.$lte = new Date(fechaFin);
+      }
     }
     
     const skip = (pagina - 1) * limite;
     
     const [pedidos, total] = await Promise.all([
       Pedido.find(query)
-        .populate("productos.producto")
-        .populate("productos.topping")
-        .populate("productos.helado")
-        .populate("cliente.usuario")
-        .sort({ createdAt: -1 })
+        .sort({ fechaCreacion: -1 })
         .skip(skip)
-        .limit(limite),
+        .limit(limite)
+        .populate('usuario', 'nombre email'),
       Pedido.countDocuments(query)
     ]);
     
+    const totalPaginas = Math.ceil(total / limite);
+    
     return {
       pedidos,
-      total,
-      pagina,
-      totalPaginas: Math.ceil(total / limite)
+      paginacion: {
+        total,
+        pagina,
+        limite,
+        totalPaginas
+      }
     };
   } catch (error) {
     throw new Error(`Error al obtener pedidos: ${error.message}`);
@@ -55,16 +60,14 @@ export const obtenerPedidosService = async (filtros, opciones) => {
 };
 
 // Servicio para obtener un pedido por ID
-export const obtenerPedidoPorIdService = async (id) => {
+export const obtenerPedidoPorIdService = async (pedidoId) => {
   try {
-    const pedido = await Pedido.findOne({ _id: id, deletedAt: null })
-      .populate("productos.producto")
-      .populate("productos.topping")
-      .populate("productos.helado")
-      .populate("cliente.usuario");
+    const pedido = await Pedido.findById(pedidoId)
+      .populate('usuario', 'nombre email')
+      .populate('resumenPedido.productos.producto', 'name photo');
     
     if (!pedido) {
-      throw new Error("Pedido no encontrado");
+      throw new Error('Pedido no encontrado');
     }
     
     return pedido;
@@ -74,83 +77,63 @@ export const obtenerPedidoPorIdService = async (id) => {
 };
 
 // Servicio para actualizar el estado de un pedido
-export const actualizarEstadoPedidoService = async (id, estado) => {
+export const actualizarEstadoPedidoService = async (pedidoId, nuevoEstado) => {
   try {
-    const estadosValidos = ['pendiente', 'confirmado', 'en_preparacion', 'en_camino', 'entregado', 'cancelado'];
-    
-    if (!estadosValidos.includes(estado)) {
-      throw new Error("Estado no válido");
-    }
-    
-    const pedidoActualizado = await Pedido.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { estado },
+    const pedidoActualizado = await Pedido.findByIdAndUpdate(
+      pedidoId,
+      { estado: nuevoEstado },
       { new: true }
     );
     
     if (!pedidoActualizado) {
-      throw new Error("Pedido no encontrado");
+      throw new Error('Pedido no encontrado');
     }
     
     return pedidoActualizado;
   } catch (error) {
-    throw new Error(`Error al actualizar estado: ${error.message}`);
+    throw new Error(`Error al actualizar estado del pedido: ${error.message}`);
   }
 };
 
-// Servicio para eliminar un pedido (borrado lógico)
-export const eliminarPedidoService = async (id) => {
+// Servicio para actualizar el comprobante de pago
+export const actualizarComprobantePagoService = async (pedidoId, estadoPago, comprobantePago) => {
   try {
-    const pedidoEliminado = await Pedido.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { deletedAt: new Date() },
+    const updateData = { 'informacionPago.estadoPago': estadoPago };
+    
+    if (comprobantePago) {
+      updateData['informacionPago.comprobantePago'] = comprobantePago;
+    }
+    
+    const pedidoActualizado = await Pedido.findByIdAndUpdate(
+      pedidoId,
+      updateData,
       { new: true }
     );
     
-    if (!pedidoEliminado) {
-      throw new Error("Pedido no encontrado");
+    if (!pedidoActualizado) {
+      throw new Error('Pedido no encontrado');
     }
     
-    return pedidoEliminado;
+    return pedidoActualizado;
   } catch (error) {
-    throw new Error(`Error al eliminar pedido: ${error.message}`);
+    throw new Error(`Error al actualizar comprobante de pago: ${error.message}`);
   }
 };
 
 // Servicio para obtener pedidos por usuario
 export const obtenerPedidosPorUsuarioService = async (usuarioId) => {
   try {
-    const pedidos = await Pedido.find({ 
-      "cliente.usuario": usuarioId,
+    const pedidos = await Pedido.find({
+      usuario: usuarioId,
       deletedAt: null
     })
-      .populate("productos.producto")
-      .populate("productos.topping")
-      .populate("productos.helado")
-      .sort({ createdAt: -1 });
-    
+    .sort({ fechaCreacion: -1 })
+    .populate('resumenPedido.productos.producto', 'name photo')
+    .populate('resumenPedido.productos.selectedTopping') // Añadido para populate del topping
+    .populate('resumenPedido.productos.selectedIceCream'); // Añadido para populate del helado
+
     return pedidos;
   } catch (error) {
-    throw new Error(`Error al obtener pedidos por usuario: ${error.message}`);
-  }
-};
-export const actualizarComprobantePagoService = async (id, estadoPago, comprobantePago) => {
-  try {
-    const pedidoActualizado = await Pedido.findOneAndUpdate(
-      { _id: id, deletedAt: null },
-      { 
-        "informacionPago.estadoPago": estadoPago,
-        "informacionPago.comprobantePago": comprobantePago 
-      },
-      { new: true }
-    );
-    
-    if (!pedidoActualizado) {
-      throw new Error("Pedido no encontrado");
-    }
-    
-    return pedidoActualizado;
-  } catch (error) {
-    throw new Error(`Error al actualizar comprobante de pago: ${error.message}`);
+    throw new Error(`Error al obtener pedidos del usuario: ${error.message}`);
   }
 };

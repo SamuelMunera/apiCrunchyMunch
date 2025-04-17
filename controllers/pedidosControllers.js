@@ -21,12 +21,23 @@ export const createPedido = async (req, res) => {
     const {
       cliente,
       entrega,
-      productos,
+      productos,  // Verifica que se reciba productos
       metodoPago,
       subtotal,
       recargoDomicilio,
       total
     } = req.body;
+
+    // Verificar que productos esté definido y sea un array
+    if (!productos || !Array.isArray(productos)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo productos es obligatorio y debe ser un array'
+      });
+    }
+
+    // Logging para depuración
+    console.log('Contenido de productos recibidos:', JSON.stringify(productos, null, 2));
 
     // Mapear la estructura que envía el frontend a la del modelo
     const pedidoData = {
@@ -52,14 +63,14 @@ export const createPedido = async (req, res) => {
             cantidad: item.cantidad,
             precio: item.precioUnitario,
             photo: item.photo || '',
-            topping: item.topping || null,
-            sabor_helado: item.helado || null
+            selectedIceCream: item.selectedIceCream || null,
+            selectedTopping: item.selectedTopping || null
           };
-          
+
           if (item.productoId && item.productoId.trim() !== '') {
             productoMapped.producto = item.productoId;
           }
-          
+
           return productoMapped;
         }),
         totalPagar: total
