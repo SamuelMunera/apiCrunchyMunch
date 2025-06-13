@@ -49,6 +49,47 @@ const pedidoSchema = new mongoose.Schema({
     recargoDomicilio: {
       type: Number,
       default: 0
+    },
+    // Nuevos campos para fecha personalizada
+    fechaPersonalizada: {
+      type: Boolean,
+      default: false
+    },
+    fechaEntrega: {
+      type: Date,
+      required: false,
+      validate: {
+        validator: function(value) {
+          // Si fechaPersonalizada es true, entonces fechaEntrega es requerida
+          if (this.informacionDeEntrega.fechaPersonalizada && !value) {
+            return false;
+          }
+          // Si se proporciona una fecha, debe ser en el futuro
+          if (value && value <= new Date()) {
+            return false;
+          }
+          return true;
+        },
+        message: 'La fecha de entrega debe ser proporcionada cuando se selecciona fecha personalizada y debe ser una fecha futura'
+      }
+    },
+    horaEntrega: {
+      type: String,
+      required: false,
+      validate: {
+        validator: function(value) {
+          // Si fechaPersonalizada es true, entonces horaEntrega es requerida
+          if (this.informacionDeEntrega.fechaPersonalizada && !value) {
+            return false;
+          }
+          // Validar formato de hora (HH:MM)
+          if (value && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
+            return false;
+          }
+          return true;
+        },
+        message: 'La hora de entrega debe ser proporcionada cuando se selecciona fecha personalizada y debe tener formato HH:MM'
+      }
     }
   },
   resumenPedido: {
@@ -76,13 +117,13 @@ const pedidoSchema = new mongoose.Schema({
         required: false
       },
       selectedTopping: {
-        type: mongoose.Schema.Types.ObjectId, // Cambiado a ObjectId
-        ref: 'topping', // Referencia a la colección de toppings
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'topping',
         required: false
       },
       selectedIceCream: {
-        type: mongoose.Schema.Types.ObjectId, // Cambiado a ObjectId
-        ref: 'iceCream', // Referencia a la colección de helados
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'iceCream',
         required: false
       }
     }],
@@ -140,6 +181,34 @@ pedidoSchema.methods.calcularTotal = function() {
   }
   
   return total;
+};
+
+// Método para obtener información de entrega formateada
+pedidoSchema.methods.obtenerFechaEntregaFormateada = function() {
+  if (!this.informacionDeEntrega.fechaPersonalizada) {
+    return 'Lo antes posible (30-45 min)';
+  }
+  
+  if (this.informacionDeEntrega.fechaEntrega && this.informacionDeEntrega.horaEntrega) {
+    const fecha = new Date(this.informacionDeEntrega.fechaEntrega);
+    const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // Convertir hora de 24h a 12h
+    const [hora, minutos] = this.informacionDeEntrega.horaEntrega.split(':');
+    const horaNum = parseInt(hora);
+    const ampm = horaNum >= 12 ? 'PM' : 'AM';
+    const hora12 = horaNum % 12 || 12;
+    const horaFormateada = `${hora12}:${minutos} ${ampm}`;
+    
+    return `${fechaFormateada} a las ${horaFormateada}`;
+  }
+  
+  return 'Fecha personalizada no especificada';
 };
 
 const Pedido = mongoose.model("Pedido", pedidoSchema);

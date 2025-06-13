@@ -38,6 +38,7 @@ export const createPedido = async (req, res) => {
 
     // Logging para depuración
     console.log('Contenido de productos recibidos:', JSON.stringify(productos, null, 2));
+    console.log('Información de entrega recibida:', JSON.stringify(entrega, null, 2));
 
     // Mapear la estructura que envía el frontend a la del modelo
     const pedidoData = {
@@ -54,7 +55,11 @@ export const createPedido = async (req, res) => {
         barrio: entrega.barrio,
         ciudad: entrega.ciudad,
         referencias: entrega.referencias || '',
-        recargoDomicilio: recargoDomicilio
+        recargoDomicilio: recargoDomicilio,
+        // Añadir información de fecha personalizada
+        fechaPersonalizada: entrega.fechaPersonalizada || false,
+        fechaEntrega: entrega.fechaEntrega || null,
+        horaEntrega: entrega.horaEntrega || null
       },
       resumenPedido: {
         productos: productos.map(item => {
