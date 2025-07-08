@@ -26,7 +26,8 @@ export async function createProduct(req, res) {
             iceCream = []  // Recibir iceCream del body
         } = req.body;
         
-        const photo = req.file ? `/uploads/${req.file.filename}` : null;
+        const photo = req.file ? req.file.location : null;
+
 
         // Validar que category sea un ObjectId válido
         if (!mongoose.Types.ObjectId.isValid(category)) {
